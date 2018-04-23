@@ -1,0 +1,76 @@
+# Projet d'analyse des amendements des députés LREM
+
+## Objectif
+
+1. Récupérer un csv avec a minimal les colonnes suivantes:
+
+     nom_parlementaire,numero_circonscription,amendement,projet_loi
+
+avec un amendement par parlementaire par ligne
+
+2. Identifier si les députés LREM sont suivent souvent le gouvernement ou pas, et autres tendences (textes de loi controverses, députés frondeurs)
+
+## TO DO
+
+_[]_ Vérifier que j'ai bien nettoyé l'output csv de jq pour les amendements. Je crois que non. Est-ce que c'est nécessaire ? Les guillemets n'apparaissent pas dans Preview
+_[]_ Remanier le script pour le rendre plus modulable et permettre des requêtes selon d'autres critères (s'assurer que les header correspondent exactement aux nom des keys du json)
+
+## Notes
+
+### Réflexions
+
+* Les députés frondeurs du parti socialiste seraient une intéressante comparaison. Ce serait aussi intéressant de comparer à l'opposition. 
+* Quelle est la marque de l'opposition à l'assemblée ? Les amendements sont une chose, mais est-ce que les questions écrites ou orales sont aussi plutôt une démonstration de désaccord ? A creuser
+* Penser à inclure dans l'article que le gouvernement veut limiter les amendements dans la réforme constitutionelle. Cela pourrait être un autre angle d'approche
+
+
+### Bon à savoir: code
+
+* S'assurer que l'on compte bien sur un array avec jq (length) et si besoin créer un array autour de la commande avant de la passer à length
+* iconv est plus élégant que sed pour enlever les caractère spéciaux, mais ça ne fonctionne pas très bien sur OSX
+* tr peut être utilisé s'il est important de tout mettre en minuscule ou majuscule
+* le nombre de résultats affichés par le header de l'API correspond à X, mais dans la boucle je dois faire la variable itérer jusqu'à x-1 par qu'elle part de 0 et non de 1.
+
+### Bon à savoir: données
+
+* Le compte des députés en cours de mandat était de 476 au lieu de 477 parce que le Conseil Constitutionnel à annulé une élection de la 5e circonscription http://www.nicematin.com/politique/lelection-de-la-deputee-samantha-cazebonne-annulee-205748
+Il est possible de vérifier le compte en faisant un double check avec la liste détaillée des députés, qui contient les informations de début et de fin de mandature. https://www.nosdeputes.fr/deputes/json
+
+## Idées d'angles / de sujets
+
+* variations de dépot d'amendements en fonction de si le groupe est au pouvoir ou pas.
+* la rapidité de la vie parlementaire : le gouvernement veut rendre la vie parlementaire plus efficace. mais pourquoi ? combien de projets de lois sont discutés dans un cycle parlementaire ? Quels gains pourraient être acquis via la réforme proposée par le gouvernement ?
+
+## Actions
+
+FIND
+lire documentation de l'API de nosdeputes.fr https://github.com/regardscitoyens/nosdeputes.fr/blob/master/doc/api.md
+
+GET
+constuire un script centré autour de curl et jq pour récupérer les données des parlementaires LREM avec les amendements qu'ils ont déposé. Trois parties de l'API utilisées :
+
+* députés en mandat https://www.nosdeputes.fr/deputes/enmandat/json
+* api du moteur de recherche pour amendements et textes de loi https://www.nosdeputes.fr/recherche
+
+resultat: script-amendements.sh
+
+echo "slug,nom,id_an,mandat_debut,nb_mandats,nom_circo,num_deptmt" > LREM_info.csv; echo "nom_auteur,id_auteur,id amendement,groupe_politique,id_loi,statut_amendement,url_an,url_rc" > LREM_amendements.csv; LREM2=$(curl -s https://www.nosdeputes.fr/deputes/enmandat/json | jq -r '.deputes[].depute | select(.groupe_sigle == "LREM") | [.slug, .nom, .id_an, .mandat_debut, .nb_mandats, .nom_circo, .num_deptmt] | @csv' | sed 's/\"//g') && while IFS=, read col1 col2 col3 ; do name=$(echo $col2 | sed -e 'y/áàâäçéèêëîïìôöóùúüñÂÀÄÇÉÈÊËÎÏÔÖÙÜÑ/aaaaceeeeiiiooouuunAAACEEEEIIOOUUN/' -e s/" "/+/g) ; end=$(curl -s "https://www.nosdeputes.fr/recherche/?object_name=Amendement&tag=parlementaire=$name&format=json&count=500" | jq '.last_result') && for ((i=0;i<$end;i++)); do curl -s "https://www.nosdeputes.fr/recherche/?object_name=Amendement&tag=parlementaire=$name&format=json&count=500" | jq --arg num $i '.results[$num|tonumber].document_url' | sed -e "s@//@/@2" -e "s/http/https/" -e "s/^/url=/" | curl -s -K- | jq -r --arg name $col1 '.amendement | [$name, .auteur_id, .id, .auteur_groupe_acronyme, .texteloi_id, .sort, .source, .url_nosdeputes] | @csv' >> LREM_amendements.csv; done; done <<< "$LREM2"; echo "$LREM2" > LREM_members.csv
+
+VERIFY
+
+Pour vérifier le nombre total de députés dans la liste
+
+curl -s https://www.nosdeputes.fr/deputes/enmandat/json | jq -s '.[].deputes | length'
+
+Pour vérifier le nombre total de députés LREM
+
+curl -s https://www.nosdeputes.fr/deputes/enmandat/json | jq -s '[.[].deputes | select(.[].depute.groupe_sigle == "LREM")] | length'
+
+Fait demande sur le IRC de Regards Citoyens pour vérifier le nombre de députés obtenus: https://kiwiirc.com/client/irc.freenode.net/?nick=citoyen|?#regardscitoyens
+
+
+
+
+
+
+
