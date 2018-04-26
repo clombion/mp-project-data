@@ -40,6 +40,54 @@ Il est possible de vérifier le compte en faisant un double check avec la liste 
 
 * variations de dépot d'amendements en fonction de si le groupe est au pouvoir ou pas.
 * la rapidité de la vie parlementaire : le gouvernement veut rendre la vie parlementaire plus efficace. mais pourquoi ? combien de projets de lois sont discutés dans un cycle parlementaire ? Quels gains pourraient être acquis via la réforme proposée par le gouvernement ?
+# Projet d'analyse des amendements des députés LREM
+
+## Objectif
+
+1. Récupérer un csv avec a minimal les colonnes suivantes:
+
+     nom_parlementaire,numero_circonscription,amendement,projet_loi
+
+avec un amendement par parlementaire par ligne
+
+2. Identifier si les députés LREM sont suivent souvent le gouvernement ou pas, et autres tendences (textes de loi controverses, députés frondeurs)
+
+## TO DO
+
+_[x]_ Vérifier que j'ai bien nettoyé l'output csv de jq pour les amendements. Je crois que non. Est-ce que c'est nécessaire ? Les guillemets n'apparaissent pas dans Preview
+_[]_ Remanier le script pour le rendre plus modulable et permettre des requêtes selon d'autres critères (s'assurer que les header correspondent exactement aux nom des keys du json)
+_[]_ Récupérer les infos des textes de loi à partir de https://www.nosdeputes.fr/15/dossiers/plus/xml et les joindres aux données téléchargées sur les amendements des députés LREM
+_[x]_ Mieux se renseigner sur le fonctionnement de l'AN, et surtout du processus de vote. Est-ce que ce sont les documents signés ?
+
+
+## Notes
+
+### Réflexions
+
+* Les députés frondeurs du parti socialiste seraient une intéressante comparaison. Ce serait aussi intéressant de comparer à l'opposition.
+* Quelle est la marque de l'opposition à l'assemblée ? Les amendements sont une chose, mais est-ce que les questions écrites ou orales sont aussi plutôt une démonstration de désaccord ? A creuser
+* Penser à inclure dans l'article que le gouvernement veut limiter les amendements dans la réforme constitutionelle. Cela pourrait être un autre angle d'approche
+
+
+### Bon à savoir: code
+
+* S'assurer que l'on compte bien sur un array avec jq (length) et si besoin créer un array autour de la commande avant de la passer à length
+* iconv est plus élégant que sed pour enlever les caractère spéciaux, mais ça ne fonctionne pas très bien sur OSX
+* tr peut être utilisé s'il est important de tout mettre en minuscule ou majuscule
+* le nombre de résultats affichés par le header de l'API correspond à X, mais dans la boucle je dois faire la variable itérer jusqu'à x-1 par qu'elle part de 0 et non de 1.
+
+### Bon à savoir: données
+
+* Le compte des députés en cours de mandat était de 476 au lieu de 477 parce que le Conseil Constitutionnel à annulé une élection de la 5e circonscription http://www.nicematin.com/politique/lelection-de-la-deputee-samantha-cazebonne-annulee-205748
+Il est possible de vérifier le compte en faisant un double check avec la liste détaillée des députés, qui contient les informations de début et de fin de mandature. https://www.nosdeputes.fr/deputes/json
+* L'API de nosdeputes.fr a seulement une partie des données publiées en open data par l'assemblée nationale. Les différences ne sont pas claires entre les deux, mais c'est surtout une question d'intention: nosdeputes.fr est là pour la transparence, data.assemblee-nationale.fr est là pour l'archive.
+* Les données avec les votes (scrutins) sont disponibles sur parlapi, mais seulement les données de synthèse. Le fichier json sur l'espace open data de l'AN est plus complet. Cependant les votants sont identifiés avec un identifiant, plutôt que leur nom.
+
+## Idées d'angles / de sujets
+
+* variations de dépot d'amendements en fonction de si le groupe est au pouvoir ou pas.
+* la rapidité de la vie parlementaire : le gouvernement veut rendre la vie parlementaire plus efficace. mais pourquoi ? combien de projets de lois sont discutés dans un cycle parlementaire ? Quels gains pourraient être acquis via la réforme proposée par le gouvernement ?
+* Le trollage parlementaire à travers les gouvernements
 
 ## Actions
 
